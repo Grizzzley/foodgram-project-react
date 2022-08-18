@@ -1,7 +1,7 @@
-import psycopg2 as pg
 import csv
 import logging
 
+import psycopg2 as pg
 
 logger = logging.getLogger(__name__)
 file = r'./utility/ingredients.csv'
@@ -23,4 +23,4 @@ finally:
     if (conn):
         cursor.close()
         conn.close()
-        print("Connection closed.")
+        logger.info('Connection closed.')

@@ -1,7 +1,9 @@
 from django.contrib import admin
 
-from .models import (Ingredient, Recipe, FavoriteRecipe, RecipeIngredient,
-                     ShoppingList)
+from .models import (
+    Ingredient, Recipe, FavoriteRecipe,
+    RecipeIngredient, ShoppingList
+)
 
 
 @admin.register(Ingredient)
@@ -21,6 +23,8 @@ class RecipesAdmin(admin.ModelAdmin):
 
     def favorited(self, obj):
         return FavoriteRecipe.objects.filter(recipe=obj).count()
+
+    favorited.short_description = "Кол-во любимых рецептов"
 
 
 @admin.register(FavoriteRecipe)
