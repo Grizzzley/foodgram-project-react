@@ -19,7 +19,7 @@ services:
         - ./.env
 
   frontend:
-    image: grizzzley/frontend_foodgram
+    image: grizzzley/frontend_foodgram:latest
     volumes:
       - result_build:/app/result_build/build/
     depends_on:
