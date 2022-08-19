@@ -1,6 +1,7 @@
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 from django.shortcuts import get_object_or_404
+
 from recipes.models import Recipe
 from .models import Subscription, User
 
