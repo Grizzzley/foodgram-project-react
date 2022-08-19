@@ -7,7 +7,6 @@ from rest_framework.generics import get_object_or_404
 from django.shortcuts import get_list_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-
 from api.pagination import CustomPagination
 from users.models import Subscription, User
 from users.serializers import SubscriptionSerializer
