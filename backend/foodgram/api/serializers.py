@@ -1,4 +1,5 @@
 from urllib import request
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -6,14 +7,9 @@ from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueTogetherValidator
-
 from recipes.models import (
-    FavoriteRecipe,
-    Ingredient,
-    RecipeIngredient,
-    Recipe,
-    RecipesTags,
-    Tag
+    FavoriteRecipe, Ingredient, RecipeIngredient, Recipe,
+    RecipesTags, Tag
 )
 from users.models import User
 from users.serializers import CustomUserSerializer
