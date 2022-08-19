@@ -8,10 +8,14 @@ services:
       POSTGRES_PASSWORD: postgres
 
   backend:
-      build: ../backend/foodgram
+      image: grizzzley/foodgram:latest
+      # build: ../backend/foodgram
       restart: always
       depends_on:
         - db
+      volumes:
+        - static_value:/app/static/
+        - media_value:/app/media/
       env_file:
         - ./.env
 
@@ -30,8 +34,12 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ../frontend/build:/usr/share/nginx/html/
       - ../docs/:/usr/share/nginx/html/api/docs/
+      - static_value:/var/html/static/
+      - media_value:/var/html/media/
     depends_on:
-      - web
+      - backend
 
 volumes:
+  static_value:
+  media_value:
   postgres:
