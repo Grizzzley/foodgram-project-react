@@ -21,7 +21,7 @@ services:
   frontend:
     image: grizzzley/frontend_foodgram:latest
     volumes:
-      - result_build:/app/result_build/build/
+      - ../frontend/:/app/result_build/
     depends_on:
       - backend
 
