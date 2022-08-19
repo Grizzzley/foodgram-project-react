@@ -9,7 +9,6 @@ services:
 
   backend:
       image: grizzzley/foodgram:latest
-      # build: ../backend/foodgram
       restart: always
       depends_on:
         - db
@@ -20,11 +19,11 @@ services:
         - ./.env
 
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: grizzzley/frontend_foodgram
     volumes:
-      - ../frontend/:/app/result_build/
+      - result_build:/app/result_build/build/
+    depends_on:
+      - backend
 
   nginx:
     image: nginx:1.19.3
