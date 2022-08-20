@@ -10,13 +10,14 @@ http://84.201.167.163
 Cайт Foodgram - онлайн-сервис, на котором пользователи могут публиковать рецепты, подписываться на публикации других пользователей, добавлять понравившиеся рецепты в список «Избранное», а перед походом в магазин скачивать список продуктов, необходимых для приготовления одного или нескольких выбранных блюд.
 
 ## Технологии
-Django
-Django rest framework
-Djoser
-Postgresql
-Nginx
-Gunicorn
-Docker Compose
+* Django
+* Django rest framework
+* Djoser
+* Postgresql
+* Docker Compose
+* Nginx
+* Gunicorn
+
 
 ## Автор
 
