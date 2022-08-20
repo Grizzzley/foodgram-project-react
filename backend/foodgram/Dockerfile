@@ -1,5 +1,5 @@
 FROM python:3.7-slim
-WORKDIR /app
+WORKDIR /app/backend
 COPY . .
 RUN python -m pip install --upgrade pip
 RUN pip3 install -r /app/backend/foodgram/requirements.txt --no-cache-dir
