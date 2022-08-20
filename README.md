@@ -1,7 +1,7 @@
 # praktikum_new_diplom
 
 # Проект Foodgram
-![Django-app workflow](https://github.com/Grizzzley/foodgram-project-react/actions/workflows/yamdb_workflow.yml/badge.svg)
+[![foodgram_workflow](https://github.com/Grizzzley/foodgram-project-react/actions/workflows/foodgram_workflow.yml/badge.svg)](https://github.com/Grizzzley/foodgram-project-react/actions/workflows/foodgram_workflow.yml)
 ## Адрес развернутого проекта
 http://84.201.167.163
 
