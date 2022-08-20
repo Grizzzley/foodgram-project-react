@@ -9,7 +9,7 @@ services:
 
   backend:
     image: grizzzley/foodgram:latest
-    restart: always
+    # restart: always
     depends_on:
       - db
     volumes:
