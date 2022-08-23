@@ -1,10 +1,7 @@
-from http import HTTPStatus
-
 from djoser.views import UserViewSet
-from rest_framework import status, viewsets, permissions
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
-from django.shortcuts import get_list_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 
@@ -50,45 +47,38 @@ class CustomUserViewSet(UserViewSet):
         permission_classes=[IsAuthenticated]
     )
     def subscribe(self, request, id):
-        user = request.user
+        author = get_object_or_404(User, id=id)
         if request.method == 'POST':
-            data = {'user': user.id, 'author': id}
+            if self.request.user == author:
+                return Response(
+                    {'errors': 'Вы не можете подписываться на самого себя.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if Subscription.objects.filter(
+                    author=author, user=self.request.user
+            ).exists():
+                return Response(
+                    {'errors': 'Вы уже подписаны на данного пользователя.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            Subscription.objects.create(author=author, user=self.request.user)
             serializer = SubscriptionSerializer(
-                data=data,
-                context={'request': request}
+                author, context={'request': request}
             )
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        following = get_object_or_404(User, id=id)
-        follow = get_object_or_404(
-            Subscription, user=user, author=following
+        if self.request.user == author:
+            return Response(
+                {'errors': 'Вы не можете отписываться от самого себя.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        follow = Subscription.objects.filter(
+            author=author, user_id=self.request.user
         )
+        if not follow.exists():
+            return Response(
+                {'errors': 'Вы не подписаны на данного пользователя.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         follow.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class SubscribeViewSet(viewsets.ModelViewSet):
-    serializer_class = SubscriptionSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return get_list_or_404(User, following__user=self.request.user)
-
-    def create(self, request, *args, **kwargs):
-        user_id = self.kwargs.get('users_id')
-        user = get_object_or_404(User, id=user_id)
-        Subscription.objects.create(
-            user=request.user, following=user
-        )
-        return Response(HTTPStatus.CREATED)
-
-    def delete(self, request, *args, **kwargs):
-        author_id = self.kwargs['users_id']
-        user_id = request.user.id
-        subscribe = get_object_or_404(
-            Subscription, user__id=user_id, following__id=author_id
-        )
-        subscribe.delete()
-        return Response(HTTPStatus.NO_CONTENT)

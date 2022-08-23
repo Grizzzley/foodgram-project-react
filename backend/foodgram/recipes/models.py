@@ -4,7 +4,7 @@ from users.models import User
 
 
 class Ingredient(models.Model):
-    ingredient = models.CharField(
+    name = models.CharField(
         max_length=180,
         verbose_name='Ингредиент'
     )
@@ -14,11 +14,12 @@ class Ingredient(models.Model):
     )
 
     class Meta:
+        ordering = ('name',)
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
 
     def __str__(self):
-        return self.ingredient
+        return self.name
 
 
 class Tag(models.Model):
@@ -40,6 +41,7 @@ class Tag(models.Model):
     )
 
     class Meta:
+        ordering = ('name',)
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
 
@@ -66,7 +68,8 @@ class Recipe(models.Model):
         verbose_name='Ингридиенты',
         related_name='recipes',
     )
-    tags = models.CharField(
+    tags = models.ManyToManyField(
+        Tag,
         'Теги',
         max_length=100,
     )
@@ -74,7 +77,7 @@ class Recipe(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Автор',
-        related_name='recipes',
+        related_name='recipe',
     )
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления',
@@ -107,9 +110,9 @@ class RecipeIngredient(models.Model):
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name='recipe_ingredient',
+        related_name='ingredient_recipe',
     )
-    weight = models.PositiveSmallIntegerField(
+    amount = models.PositiveSmallIntegerField(
         help_text='Укажите кол-во больше нуля.',
         verbose_name='Вес',
     )
@@ -153,13 +156,18 @@ class FavoriteRecipe(models.Model):
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='Рецепт',
-        related_name='favorite_recipe',
+        related_name='favorite'
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
-        related_name='favorite_user',
+        related_name='favorite',
+    )
+    favorite = models.BooleanField(verbose_name='Избранное', default=False)
+    shopping_cart = models.BooleanField(
+        verbose_name='Корзина покупок',
+        default=False,
     )
 
     class Meta:
@@ -181,7 +189,8 @@ class ShoppingList(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='shopping_cart'
+        verbose_name='Рецепт',
+        related_name='shopping_carts'
     )
     user = models.ForeignKey(
         User,

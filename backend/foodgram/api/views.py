@@ -1,143 +1,105 @@
 from django.http import HttpResponse
-from django.db.models import Sum
-from django_filters import rest_framework as filters
-from rest_framework import filters as rest_filters
-from rest_framework import status, viewsets
+from django.db.models import Sum, F
+from django.template.loader import render_to_string
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from weasyprint import HTML
 
-from api.filters import RecipeFilter
+from api.filters import IngredientFilter, RecipeFilter
 from api.pagination import CustomPagination
 from api.permissions import IsAuthorOrAdminOrReadOnly
-from api.serializers import (
-    FavoriteRecipeSerializer, IngredientSerializer,
-    RecipeSerializer, TagSerializer
+from .serializers import (
+    AddRecipeSerializer, IngredientSerializer,
+    RecipeSerializer, ShowRecipeSerializer,
+    TagSerializer
 )
 from recipes.models import (
-    FavoriteRecipe, Ingredient, RecipeIngredient,
-    Recipe, Tag, ShoppingList
+    Recipe, Ingredient, RecipeIngredient, Tag,
 )
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+    permission_classes = (IsAuthorOrAdminOrReadOnly,)
 
 
-class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
+class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    filter_backends = (filters.DjangoFilterBackend, rest_filters.SearchFilter)
-    filterset_fields = ('ingredient',)
-    search_fields = ('^ingredient',)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = IngredientFilter
 
 
-class RecipeViewSet(viewsets.ModelViewSet):
+class RecipesViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
+    serializer_classes = {
+        'retrieve': ShowRecipeSerializer,
+        'list': ShowRecipeSerializer,
+    }
+    default_serializer_class = AddRecipeSerializer
     permission_classes = (IsAuthorOrAdminOrReadOnly,)
     pagination_class = CustomPagination
-    filter_backends = (filters.DjangoFilterBackend,)
+    filter_backends = [DjangoFilterBackend]
     filterset_class = RecipeFilter
 
-    def perform_create(self, serializer):
-        serializer.save(
-            author=self.request.user, tags=self.request.data['tags']
+    def get_serializer_class(self):
+        return self.serializer_classes.get(
+            self.action, self.default_serializer_class
         )
 
-    def perform_update(self, serializer):
-        serializer.save(
-            author=self.request.user, tags=self.request.data['tags']
-        )
+    def _favorite_shopping_post_delete(self, related_manager):
+        recipe = self.get_object()
+        if self.request.method == 'DELETE':
+            related_manager.get(recipe_id=recipe.id).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        if related_manager.filter(recipe=recipe).exists():
+            raise ValidationError('Рецепт уже в избранном')
+        related_manager.create(recipe=recipe)
+        serializer = RecipeSerializer(instance=recipe)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(
+        detail=True,
+        permission_classes=[permissions.IsAuthenticated],
         methods=['POST', 'DELETE'],
-        detail=False,
-        permission_classes=[IsAuthenticated],
-        url_path='(?P<id>[0-9]+)/shopping_cart',
     )
-    def shopping_cart(self, request, id):
-        recipe_by_id = get_object_or_404(Recipe, id=id)
-        if request.method == 'POST':
-            favorite_recipe, created = FavoriteRecipe.objects.get_or_create(
-                recipe=recipe_by_id, user=self.request.user
-            )
-            if created is True:
-                raise ValidationError(
-                    detail={'error': ['Рецепт уже был добавлен.']}
-                )
-            favorite_recipe.shopping_cart = True
-            favorite_recipe.save()
-            serializer = FavoriteRecipeSerializer(recipe_by_id)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        favorite_recipe = get_object_or_404(
-            ShoppingList, recipe=recipe_by_id, user=self.request.user
+    def favorite(self, request, pk=None):
+        return self._favorite_shopping_post_delete(
+            request.user.favorite
         )
-        if not favorite_recipe.shopping_cart:
-            raise ValidationError(
-                detail={'error': ['Данного рецепта нет в списке покупок.']}
-            )
-        favorite_recipe.shopping_cart = False
-        favorite_recipe.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
+        detail=True,
+        permission_classes=[permissions.IsAuthenticated],
         methods=['POST', 'DELETE'],
-        detail=False,
-        permission_classes=[IsAuthenticated],
-        url_path='(?P<id>[0-9]+)/favorite',
     )
-    def favorite(self, request, id):
-        recipe_by_id = get_object_or_404(Recipe, id=id)
-        if request.method == 'POST':
-            favorite_recipe, created = FavoriteRecipe.objects.get_or_create(
-                recipe=recipe_by_id, user=self.request.user
-            )
-            if created is True:
-                raise ValidationError(
-                    detail={'error': ['Рецепт уже был добавлен в избранные.']}
-                )
-            favorite_recipe.favorite = True
-            favorite_recipe.save()
-            serializer = FavoriteRecipeSerializer(recipe_by_id)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        favorite_recipe = get_object_or_404(
-            FavoriteRecipe, recipe=recipe_by_id, user=self.request.user
+    def shopping_cart(self, request, pk=None):
+        return self._favorite_shopping_post_delete(
+            request.user.shopping_user
         )
-        if not favorite_recipe.shopping_cart:
-            raise ValidationError(
-                detail={'error': ['Данного рецепта нет в избранных.']}
-            )
-        favorite_recipe.favorite = False
-        favorite_recipe.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=False,
-        permission_classes=[IsAuthenticated],
-        url_path='download_shopping_cart',
+        permission_classes=[permissions.IsAuthenticated]
     )
     def download_shopping_cart(self, request):
         user = request.user
         ingredients = RecipeIngredient.objects.filter(
-            recipe__shopping_carts__user=user
-        ).order_by(
-            'ingredient__name'
-        ).values(
-            'ingredient__name',
-            'ingredient__measurement_unit',
-        ).annotate(sum_amount=Sum('amount'))
-        shopping_cart = '\n'.join([
-            f'{ingredient["ingredient__name"]} - {ingredient["sum_amount"]}'
-            f'{ingredient["ingredient__measurement_unit"]}'
-            for ingredient in ingredients
-        ])
-        filename = 'shopping_cart.txt'
-        response = HttpResponse(shopping_cart, content_type='text/plain')
-        response['Content-Disposition'] = f'attachment; filename={filename}'
+            recipe__shopping_carts__user=user).values(
+            name=F('ingredient__name'),
+            measurement_unit=F('ingredient__measurement_unit')
+        ).annotate(amount=Sum('amount')).values_list(
+            'ingredient__name', 'amount', 'ingredient__measurement_unit'
+        )
+        html_template = render_to_string('recipes/pdf_template.html',
+                                         {'ingredients': ingredients})
+        html = HTML(string=html_template)
+        result = html.write_pdf()
+        response = HttpResponse(result, content_type='application/pdf;')
+        response['Content-Disposition'] = 'inline; filename=shopping_list.pdf'
+        response['Content-Transfer-Encoding'] = 'binary'
         return response

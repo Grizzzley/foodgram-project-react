@@ -5,13 +5,13 @@ from recipes.models import Recipe, Ingredient, Tag
 
 
 class IngredientFilter(django_filters.FilterSet):
-    ingredient = filters.CharFilter(
-        field_name='ingredient', lookup_expr='startswith'
+    name = filters.CharFilter(
+        field_name='name', lookup_expr='icontains'
     )
 
     class Meta:
         model = Ingredient
-        fields = ('ingredient',)
+        fields = ('name',)
 
 
 class RecipeFilter(django_filters.FilterSet):
@@ -32,7 +32,7 @@ class RecipeFilter(django_filters.FilterSet):
     def filter_is_favorited(self, queryset, name, value):
         if not value:
             return queryset
-        return queryset.filter(favorites__user=self.request.user)
+        return queryset.filter(favorite__user=self.request.user)
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
         if not value:

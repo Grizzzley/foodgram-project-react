@@ -1,6 +1,6 @@
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
-from django.shortcuts import get_object_or_404
+from django.utils.datastructures import MultiValueDictKeyError
 
 from recipes.models import Recipe
 from .models import Subscription, User
@@ -43,12 +43,9 @@ class CustomUserSerializer(UserSerializer):
         )
 
     def get_is_subscribed(self, obj):
-        request = self.context.get('request')
-        if not request or request.user.is_anonymous:
-            return False
-        return Subscription.objects.filter(
-            user=self.context['request'].user,
-            author=obj
+        user = self.context.get('request').user
+        return user.is_anonymous and Subscription.objects.filter(
+            author__id=obj.id, user__id=user.id
         ).exists()
 
 
@@ -61,6 +58,12 @@ class SubscriptionRecipeSerializer(serializers.ModelSerializer):
             'image',
             'cooking_time'
         )
+
+
+class FavoriteRecipeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
@@ -82,24 +85,19 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         )
 
     def get_is_subscribed(self, obj):
-        user = get_object_or_404(User, user=obj.username)
+        user = self.context.get('request').user
         if not user:
             return False
         return Subscription.objects.filter(user=user, author=obj).exists()
 
     def get_recipes(self, obj):
-        request = self.context.get('request')
-        limit_recipes = request.query_params.get('recipes_limit')
-        if limit_recipes is not None:
-            recipes = obj.recipes.all()[:(int(limit_recipes))]
-        else:
-            recipes = obj.recipes.all()
-        context = {'request': request}
-        return SubscriptionRecipeSerializer(
-            recipes, many=True,
-            context=context
-        ).data
+        recipes = Recipe.objects.filter(author=obj).all()
+        try:
+            limit = int(self.context['request'].query_params['recipes_limit'])
+            recipes = recipes[:limit]
+        except MultiValueDictKeyError:
+            pass
+        return FavoriteRecipeSerializer(recipes, many=True).data
 
-    @staticmethod
-    def get_recipes_count(obj):
-        return obj.recipes.count()
+    def get_recipes_count(self, obj):
+        return Recipe.objects.filter(author=obj).count()

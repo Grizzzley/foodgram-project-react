@@ -8,7 +8,7 @@ def csv_loader():
     logger = logging.getLogger(__name__)
     file = r'./utility/ingredients.csv'
     sql_insert = """INSERT INTO recipes_ingredient(
-        ingredient, measurement_unit
+        name, measurement_unit
     )VALUES(%s, %s)"""
     try:
         conn = pg.connect(
