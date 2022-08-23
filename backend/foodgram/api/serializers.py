@@ -1,4 +1,4 @@
-from drf_extra_fields.fields import Base64ImageField
+from drf_base64.fields import Base64ImageField
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import F
@@ -40,7 +40,7 @@ class ShowIngredientsInRecipeSerializer(serializers.ModelSerializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
-    # image = Base64ImageField()
+    image = Base64ImageField()
 
     class Meta:
         model = Recipe
@@ -49,7 +49,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 class ShowRecipeSerializer(serializers.ModelSerializer):
     author = CustomUserSerializer(read_only=True)
-    # image = Base64ImageField()
+    image = Base64ImageField()
     tags = TagSerializer(many=True, read_only=True)
     ingredients = serializers.SerializerMethodField()
     is_favorited = serializers.SerializerMethodField()
