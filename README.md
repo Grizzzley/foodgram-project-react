@@ -23,6 +23,11 @@ Cайт Foodgram - онлайн-сервис, на котором пользов
 
 [Михаил Васильев](https://github.com/Grizzzley)
 
+## Тестовые пользователи
+| login | email           | password  |
+| ----- | --------------- | --------- |
+| griadmin | griadmin@mail.fake | admingri123 |
+| Grizzzley | gritest@mail.fake | 1io3ip67f |
 
 ## Ресурсы API Foodgram
 
