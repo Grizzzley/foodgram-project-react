@@ -8,8 +8,8 @@ services:
       POSTGRES_PASSWORD: postgres
 
   backend:
-    build: ../backend/foodgram
-    # image: grizzzley/foodgram:latest
+    # build: ../backend/foodgram
+    image: grizzzley/foodgram:latest
     restart: always
     depends_on:
       - db

@@ -21,6 +21,7 @@ class UserAdmin(admin.ModelAdmin):
         'email',
         'is_staff',
         'is_blocked',
+        'role',
     )
     list_display_links = (
         'pk',
@@ -30,6 +31,7 @@ class UserAdmin(admin.ModelAdmin):
         'username',
         'email',
         ('is_staff', admin.BooleanFieldListFilter),
+        'blocked'
     )
     search_fields = (
         'username',
@@ -41,10 +43,10 @@ class UserAdmin(admin.ModelAdmin):
     list_max_show_all = 100
     readonly_fields = ('id',)
 
-    def is_blocked(self, obj):
-        return obj.is_blocked
+    # def is_blocked(self, obj):
+    #     return obj.is_blocked
 
-    is_blocked.boolean = True
+    # is_blocked.boolean = True
 
 
 @admin.register(Subscription)
