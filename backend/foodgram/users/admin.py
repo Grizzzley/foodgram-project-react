@@ -43,11 +43,6 @@ class UserAdmin(admin.ModelAdmin):
     list_max_show_all = 100
     readonly_fields = ('id',)
 
-    # def is_blocked(self, obj):
-    #     return obj.is_blocked
-
-    # is_blocked.boolean = True
-
 
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
